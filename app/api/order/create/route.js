@@ -1,4 +1,5 @@
 import { inngest } from "@/config/inngest";
+import connectDB from "@/config/db";
 import Product from "@/models/Product";
 import User from "@/models/User";
 import { getAuth } from "@clerk/nextjs/server";
@@ -15,11 +16,27 @@ export async function POST(request) {
             return NextResponse.json({ success: false, message: 'Invalid Data' })
         }
 
-        // calculate amount using items
-        const amount = await items.reduce(async (acc, item) => {
+        await connectDB()
+
+        let amount = 0
+
+        for (const item of items) {
             const product = await Product.findById(item.product)
-            return await acc + product.offerPrice * item.quantity
-        }, 0)
+
+            if (!product) {
+                return NextResponse.json({ success: false, message: 'Product not found' })
+            }
+
+            if ((product.stock ?? 0) < item.quantity) {
+                return NextResponse.json({ success: false, message: `${product.name} is out of stock` })
+            }
+
+            amount += product.offerPrice * item.quantity
+
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: -item.quantity }
+            })
+        }
 
         await inngest.send({
             name: 'order/created',

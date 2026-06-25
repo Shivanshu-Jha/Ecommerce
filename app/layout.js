@@ -15,9 +15,10 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${outfit.className} antialiased text-gray-700`} >
+        <body className={`${outfit.className} antialiased text-gray-700 `} >
+
           <Toaster />
-          <AppContextProvider>
+          <AppContextProvider >
             {children}
           </AppContextProvider>
         </body>

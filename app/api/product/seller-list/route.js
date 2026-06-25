@@ -9,15 +9,19 @@ export async function GET(request) {
     try {
         const { userId } = getAuth(request)
 
-        const isSeller = authSeller(userId)
+        if (!userId) {
+            return NextResponse.json({ success: false, message: "Not Authorized" }, { status: 401 })
+        }
+
+        const isSeller = await authSeller(userId)
 
         if (!isSeller) {
-            return NextResponse.json({ success: false, message: "Not Authorized" })
+            return NextResponse.json({ success: false, message: "Not Authorized" }, { status: 401 })
         }
 
         await connectDB()
 
-        const products = await Product.find({})
+        const products = await Product.find({ userId }).sort({ date: -1 })
         return NextResponse.json({ success: true, products })
 
     } catch (error) {
